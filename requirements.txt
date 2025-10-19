@@ -1,0 +1,9 @@
+# Specifies the Python libraries required by the project
+
+faststream[kafka]>=0.6.0 # Stream processing library with Kafka support (version >=0.6.0 for Pydantic v2 compatibility)
+langchain>=0.2.0         # Core LangChain framework for agent logic
+langchain-google-genai>=1.0.0 # LangChain integration for Google Gemini models
+google-generativeai      # Underlying Google AI SDK (often needed by langchain-google-genai)
+yfinance                 # Library to fetch stock market data
+newsapi-python           # Library to fetch news headlines from NewsAPI
+pydantic                 # Data validation and settings management library (used by FastStream)
