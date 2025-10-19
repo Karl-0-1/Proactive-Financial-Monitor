@@ -1,0 +1,21 @@
+# Dockerfile: Blueprint for building the Python application container image
+
+# Use an official lightweight Python image as the base
+FROM python:3.11-slim
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy only the requirements file first to leverage Docker build cache
+COPY requirements.txt .
+
+# Install the Python dependencies specified in requirements.txt
+# --no-cache-dir reduces the final image size slightly
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application code (all .py files) into the container's /app directory
+COPY . .
+
+# No CMD or ENTRYPOINT is needed here, as the specific script to run
+# (producer.py, news_producer.py, monitor_agent.py)
+# will be defined in the docker-compose.yml file for each service.
