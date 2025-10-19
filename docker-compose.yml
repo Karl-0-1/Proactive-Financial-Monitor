@@ -1,0 +1,57 @@
+# docker-compose.yml: Defines and runs the multi-container application
+
+version: '3.8' # Specifies the Docker Compose version
+
+services:
+  # Service 1: Redpanda - The Kafka-compatible message broker
+  redpanda:
+    image: redpandadata/redpanda:latest # Use the official Redpanda image from Docker Hub
+    ports:
+      # Map container port 9092 (Kafka API) to host port 9092
+      # Allows external tools (like a Kafka client on your host) to connect if needed
+      - "9092:9092"
+      # Optionally map port 9644 for Redpanda's HTTP admin API (useful for monitoring)
+      # - "9644:9644"
+    command:
+      # Redpanda startup command with recommended flags for local development
+      - redpanda
+      - start
+      - --overprovisioned # Allows running on systems with limited cores
+      - --smp 1           # Limit Redpanda to using 1 CPU core
+      - --memory 1G       # Limit Redpanda's memory usage to 1 GB
+      - --default-log-level=info # Set the logging level (can be changed to debug if needed)
+
+  # Service 2: Stock Producer - Fetches and publishes stock prices
+  stock-producer:
+    build: . # Build an image using the Dockerfile in the current directory (.)
+    command: python producer.py # The command to run when the container starts
+    environment:
+      # Optional: Make the broker address configurable via an environment variable
+      - BROKER_ADDRESS=redpanda:9092
+    depends_on:
+      - redpanda # Ensure redpanda is started before this service
+
+  # Service 3: News Producer - Fetches and publishes news headlines
+  news-producer:
+    build: . # Use the same image built from the Dockerfile
+    command: python news_producer.py
+    environment:
+      # Pass the NEWS_API_KEY from the host's environment into this container's environment
+      - NEWS_API_KEY=${NEWS_API_KEY}
+      - BROKER_ADDRESS=redpanda:9092
+    depends_on:
+      - redpanda # Ensure redpanda is started first
+
+  # Service 4: Monitor Agent - Consumes messages and runs agent logic
+  monitor-agent:
+    build: . # Use the same image
+    command: python monitor_agent.py
+    environment:
+      # Pass the GOOGLE_API_KEY from the host's environment into this container
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - BROKER_ADDRESS=redpanda:9092
+    depends_on:
+      - redpanda # Ensure redpanda is started first
+
+# Note: Docker Compose automatically creates a default network connecting these services,
+# allowing them to reach each other using their service names (e.g., 'redpanda').
